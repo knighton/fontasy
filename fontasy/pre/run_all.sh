@@ -111,7 +111,7 @@ on_begin
 $PY -m fontasy.pre.list_chrs \
     --in $PROC_ROOT/fonts.jsonl \
     --out $PROC_ROOT/chrs.jsonl
-on_end "5. List available characters per font"
+on_end "5. List characters per font"
 
 # 6. Visualize character frequencies.
 #
@@ -124,4 +124,32 @@ $PY -m fontasy.pre.vis_chr_freqs \
     --out_by_chr $PROC_ROOT/chr_freqs_by_chr.jsonl \
     --out_by_freq $PROC_ROOT/chr_freqs_by_freq.jsonl \
     --out_ascii $PROC_ROOT/chr_freqs_ascii.txt
-on_end "6. Visualize available characters per font"
+on_end "6. Visualize characters per font (to decide characters to use)"
+
+# 7. Calculate heights.
+#
+# Calculate the heights (ascent and descent) for every font for every sane font
+# size.  This is used to decide ideal font size to use (trading off font size
+# and font coverage).
+
+on_begin
+$PY -m fontasy.pre.calc_heights \
+    --in $PROC_ROOT/fonts.jsonl \
+    --min_font_size $MIN_FONT_SIZE \
+    --max_font_size $MAX_FONT_SIZE \
+    --out $PROC_ROOT/heights.npy
+on_end "7. Get heights for every font size"
+
+# 8. Visualize heights.
+#
+# Display visualizations to help determine the optimal font size to use.
+
+on_begin
+$PY -m fontasy.pre.vis_heights \
+    --in $PROC_ROOT/heights.npy \
+    --min_font_size $MIN_FONT_SIZE \
+    --max_font_size $MAX_FONT_SIZE \
+    --img_height $IMG_HEIGHT \
+    --out_coverage $PROC_ROOT/heights_coverage.txt \
+    --out_best $PROC_ROOT/heights_best.csv
+on_end "8. Visualize font heights (to decide font size to use)"
