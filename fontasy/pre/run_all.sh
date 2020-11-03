@@ -10,13 +10,14 @@
 PY=python3
 TTF_ROOT=~/dataset/fonts/
 PROC_ROOT=data/pre/
-
 FONT_PROP=regular
+CHRS=33..127
 MIN_FONT_SIZE=1
 MAX_FONT_SIZE=64
 FONT_SIZE=40
 IMG_HEIGHT=64
-CHRS=33..127
+MAX_ASCENT=46
+MAX_DESCENT=18
 IMG_WIDTH=32
 
 rm -rf $PROC_ROOT
@@ -153,3 +154,18 @@ $PY -m fontasy.pre.vis_heights \
     --out_coverage $PROC_ROOT/heights_coverage.txt \
     --out_best $PROC_ROOT/heights_best.csv
 on_end "8. Visualize font heights (to decide font size to use)"
+
+# 9. Make dataset.
+#
+# Draw the glyphs to a binary table.
+
+on_begin
+$PY -m fontasy.pre.make_dataset \
+    --in $PROC_ROOT/fonts.jsonl \
+    --chrs $CHRS \
+    --font_size $FONT_SIZE \
+    --max_ascent $MAX_ASCENT \
+    --max_descent $MAX_DESCENT \
+    --img_width $IMG_WIDTH \
+    --out $PROC_ROOT/dataset/
+on_end "9. Make dataset (fonts x chrs)"
