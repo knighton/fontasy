@@ -102,3 +102,26 @@ N=`cat $F | wc -l`
 echo - Filtered $N \($F\)
 
 echo
+
+# 5. List characters.
+#
+# Get the list of supported code points for each font.
+
+on_begin
+$PY -m fontasy.pre.list_chrs \
+    --in $PROC_ROOT/fonts.jsonl \
+    --out $PROC_ROOT/chrs.jsonl
+on_end "5. List available characters per font"
+
+# 6. Visualize character frequencies.
+#
+# Show the distribution of supported characters in the selected fonts, for
+# deciding what broadly-available characters to include in dataset.
+
+on_begin
+$PY -m fontasy.pre.vis_chr_freqs \
+    --in $PROC_ROOT/chrs.jsonl \
+    --out_by_chr $PROC_ROOT/chr_freqs_by_chr.jsonl \
+    --out_by_freq $PROC_ROOT/chr_freqs_by_freq.jsonl \
+    --out_ascii $PROC_ROOT/chr_freqs_ascii.txt
+on_end "6. Visualize available characters per font"
