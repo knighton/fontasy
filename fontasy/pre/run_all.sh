@@ -6,6 +6,11 @@
 # 2. Dedupe fonts
 # 3. Visualize font properties
 # 4. Filter fonts
+# 5. List characters.
+# 6. Visualize character frequencies.
+# 7. Calculate heights.
+# 8. Visualize heights.
+# 9. Make dataset.
 
 PY=python3
 TTF_ROOT=~/dataset/fonts/
