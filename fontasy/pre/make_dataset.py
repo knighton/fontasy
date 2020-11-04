@@ -12,7 +12,7 @@ from wurlitzer import pipes
 def parse_args():
     x = ArgumentParser()
     x.add_argument('--in', type=str, required=True)
-    x.add_argument('--chrs', type=str, required=True)
+    x.add_argument('--chars', type=str, required=True)
     x.add_argument('--font_size', type=int, required=True)
     x.add_argument('--max_ascent', type=int, required=True)
     x.add_argument('--max_descent', type=int, required=True)
@@ -21,7 +21,7 @@ def parse_args():
     return x.parse_args()
 
 
-def parse_chr_ranges(s):
+def parse_char_ranges(s):
     ss = s.split(',')
     rr = []
     for s in ss:
@@ -53,7 +53,7 @@ def is_font_height_ok(font, max_ascent, max_descent):
     return True
 
 
-def get_font_chrs(f):
+def get_font_chars(f):
     font = TTFont(f)
     r = set()
     with pipes() as (out, err):
@@ -62,7 +62,7 @@ def get_font_chrs(f):
     return r
 
 
-def center_chr_in_img(a, w):
+def center_char_in_img(a, w):
     _, a_w = a.shape
     assert (a[:, w:] == 0).all()
     pad_lr = a_w - w
@@ -73,17 +73,17 @@ def center_chr_in_img(a, w):
     return x
     
 
-def sample_to_bytes(font_id, chr_id, image):
-    return struct.pack('ii', font_id, chr_id) + image.tobytes()
+def sample_to_bytes(font_id, char_id, image):
+    return struct.pack('ii', font_id, char_id) + image.tobytes()
 
 
 def main(args):
     os.makedirs(args.out)
 
-    want_chrs = parse_chr_ranges(args.chrs)
-    want_chrs_set = set(want_chrs)
+    want_chars = parse_char_ranges(args.chars)
+    want_chars_set = set(want_chars)
     c2id = {}
-    for c in want_chrs:
+    for c in want_chars:
         c2id[c] = len(c2id)
 
     img_height = args.max_ascent + args.max_descent
@@ -93,10 +93,11 @@ def main(args):
     lines = open(in_f).readlines()
     lines = tqdm(lines, leave=False)
 
-    f = os.path.join(args.out, 'data.npy')
+    f = os.path.join(args.out, 'data.bin')
     out = open(f, 'wb')
     bytes_per_sample = 4 + 4 + img_height * args.img_width
     font_names = []
+    img_count = 0
     for font_id, line in enumerate(lines):
         x = json.loads(line)
         f = x['file']
@@ -104,10 +105,10 @@ def main(args):
         font = ImageFont.truetype(f, args.font_size)
         if not is_font_height_ok(font, args.max_ascent, args.max_descent):
             continue
-        have_chrs_set = get_font_chrs(f)
-        cc = sorted(want_chrs_set & have_chrs_set)
+        have_chars_set = get_font_chars(f)
+        cc = sorted(want_chars_set & have_chars_set)
         for c in cc:
-            chr_id = c2id[c]
+            char_id = c2id[c]
             text = chr(c)
             image = Image.new('L', (args.img_width, img_height))
             draw = ImageDraw.Draw(image)
@@ -116,35 +117,39 @@ def main(args):
                 continue
             draw.text((0, 0), text, font=font, fill=(255,))
             a = np.array(image)
-            a = center_chr_in_img(a, w)
-            b = sample_to_bytes(font_id, chr_id, a)
+            a = center_char_in_img(a, w)
+            b = sample_to_bytes(font_id, char_id, a)
             assert len(b) == bytes_per_sample
             out.write(b)
+            img_count += 1
     out.close()
 
-    f = os.path.join(args.out, 'font.txt')
+    f = os.path.join(args.out, 'meta.json')
     out = open(f, 'w')
-    for name in font_names:
-        family, style = name
-        line = '%s %s\n' % (family, style)
-        out.write(line)
-    out.close()
-
-    f = os.path.join(args.out, 'char.txt')
-    out = open(f, 'w')
-    for c in want_chrs:
-        line = '%d\n' % c
-        out.write(line)
-    out.close()
-
-    f = os.path.join(args.out, 'char.npy')
-    want_chrs = np.array(want_chrs, np.int32)
-    want_chrs.tofile(f)
-
-    f = os.path.join(args.out, 'shape.txt')
-    out = open(f, 'w')
-    s = '%d %d\n' % (img_height, args.img_width)
+    x = {
+        'fonts': font_names,
+        'chars': want_chars,
+        'font_size': args.font_size,
+        'max_ascent': args.max_ascent,
+        'max_descent': args.max_descent,
+        'img_count': img_count,
+        'img_height': img_height,
+        'img_width': args.img_width,
+    } 
+    s = json.dumps(x, sort_keys=True)
     out.write(s)
+
+    f = os.path.join(args.out, 'meta.bin')
+    out = open(f, 'wb')
+    a = struct.pack('iii', img_count, img_height, args.img_width)
+    b = struct.pack('iii', args.font_size, args.max_ascent, args.max_descent)
+    c = struct.pack('ii', len(want_chars), len(font_names))
+    d = np.array(want_chars, np.int32).tobytes()
+    out.write(a + b + c + d)
+    for font_name in font_names:
+        s = ' '.join(font_name) + '\n'
+        out.write(s.encode('utf-8'))
+    out.close()
 
 
 if __name__ == '__main__':

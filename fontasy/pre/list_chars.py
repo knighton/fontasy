@@ -11,7 +11,7 @@ def parse_args():
     return x.parse_args()
 
 
-def get_font_chrs(f):
+def get_font_chars(f):
     font = TTFont(f)
     r = set()
     with pipes() as (out, err):
@@ -27,10 +27,10 @@ def main(args):
         x = json.loads(s)
         f = x['file']
         h = x['sha256']
-        cc = get_font_chrs(f)
+        cc = get_font_chars(f)
         x = {
             'sha256': h,
-            'chrs': cc,
+            'chars': cc,
         }
         s = json.dumps(x, sort_keys=True) + '\n'
         out.write(s)

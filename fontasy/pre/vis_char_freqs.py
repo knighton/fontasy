@@ -6,7 +6,7 @@ import json
 def parse_args():
     x = ArgumentParser()
     x.add_argument('--in', type=str, required=True)
-    x.add_argument('--out_by_chr', type=str, required=True)
+    x.add_argument('--out_by_char', type=str, required=True)
     x.add_argument('--out_by_freq', type=str, required=True)
     x.add_argument('--out_ascii', type=str, required=True)
     return x.parse_args()
@@ -18,16 +18,16 @@ def main(args):
     total = 0
     for s in open(in_f):
         x = json.loads(s)
-        cc = x['chrs']
+        cc = x['chars']
         for c in cc:
             c2n[c] += 1
         total += 1
 
-    out = open(args.out_by_chr, 'w')
+    out = open(args.out_by_char, 'w')
     for c in sorted(c2n):
         n = c2n[c]
         x = {
-            'chr': chr(c),
+            'char': chr(c),
             'ord': c,
             'count': n,
             'frac': n / total,
@@ -45,7 +45,7 @@ def main(args):
     for n in sorted(n2cc, reverse=True):
         for c in n2cc[n]:
             x = {
-                'chr': chr(c),
+                'char': chr(c),
                 'ord': c,
                 'count': n,
                 'frac': n / total,

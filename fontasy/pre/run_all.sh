@@ -114,9 +114,9 @@ echo
 # Get the list of supported code points for each font.
 
 on_begin
-$PY -m fontasy.pre.list_chrs \
+$PY -m fontasy.pre.list_chars \
     --in $PROC_ROOT/fonts.jsonl \
-    --out $PROC_ROOT/chrs.jsonl
+    --out $PROC_ROOT/chars.jsonl
 on_end "5. List characters per font"
 
 # 6. Visualize character frequencies.
@@ -125,11 +125,11 @@ on_end "5. List characters per font"
 # deciding what broadly-available characters to include in dataset.
 
 on_begin
-$PY -m fontasy.pre.vis_chr_freqs \
-    --in $PROC_ROOT/chrs.jsonl \
-    --out_by_chr $PROC_ROOT/chr_freqs_by_chr.jsonl \
-    --out_by_freq $PROC_ROOT/chr_freqs_by_freq.jsonl \
-    --out_ascii $PROC_ROOT/chr_freqs_ascii.txt
+$PY -m fontasy.pre.vis_char_freqs \
+    --in $PROC_ROOT/chars.jsonl \
+    --out_by_char $PROC_ROOT/char_freqs_by_char.jsonl \
+    --out_by_freq $PROC_ROOT/char_freqs_by_freq.jsonl \
+    --out_ascii $PROC_ROOT/char_freqs_ascii.txt
 on_end "6. Visualize characters per font (to decide characters to use)"
 
 # 7. Calculate heights.
@@ -167,10 +167,10 @@ on_end "8. Visualize font heights (to decide font size to use)"
 on_begin
 $PY -m fontasy.pre.make_dataset \
     --in $PROC_ROOT/fonts.jsonl \
-    --chrs $CHRS \
+    --chars $CHRS \
     --font_size $FONT_SIZE \
     --max_ascent $MAX_ASCENT \
     --max_descent $MAX_DESCENT \
     --img_width $IMG_WIDTH \
     --out $PROC_ROOT/dataset/
-on_end "9. Make dataset (fonts x chrs)"
+on_end "9. Make dataset (fonts x chars)"
