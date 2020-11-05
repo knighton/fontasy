@@ -11,6 +11,7 @@
 # 7. Calculate heights.
 # 8. Visualize heights.
 # 9. Make dataset.
+# 10. Visualize dataset.
 
 PY=python3
 TTF_ROOT=~/dataset/fonts/

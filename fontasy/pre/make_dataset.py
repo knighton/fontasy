@@ -100,18 +100,22 @@ def main(args):
     f = os.path.join(args.out, 'data.bin')
     out = open(f, 'wb')
     bytes_per_sample = 4 + 4 + img_height * args.img_width
-    font_names = []
     img_count = 0
+    font_counts = []
+    char_counts = [0] * num_want_chars
+    font_names = []
     for font_id, line in enumerate(lines):
         x = json.loads(line)
         f = x['file']
-        font_names.append(x['name'])
+        font_name = x['name']
         font = ImageFont.truetype(f, args.font_size)
         if not is_font_height_ok(font, args.max_ascent, args.max_descent):
             continue
+
         have_chars_set = get_font_chars(f)
         cc = sorted(want_chars_set & have_chars_set)
         bb = []
+        char_ids = []
         for c in cc:
             char_id = c2id[c]
             text = chr(c)
@@ -120,24 +124,35 @@ def main(args):
             w, h = draw.textsize(text, font=font)
             if img_height < h or args.img_width < w:
                 continue
+
             draw.text((0, 0), text, font=font, fill=(255,))
             a = np.array(image)
             a = center_char_in_img(a, w)
             b = sample_to_bytes(font_id, char_id, a)
+            char_ids.append(char_id)
             assert len(b) == bytes_per_sample
             bb.append(b)
+
         have_frac = len(bb) / num_want_chars
-        if args.min_font_ok_frac <= have_frac:
-            b = b''.join(bb)
-            out.write(b)
-            img_count += len(bb)
+        if have_frac < args.min_font_ok_frac:
+            continue
+
+        b = b''.join(bb)
+        out.write(b)
+        img_count += len(bb)
+        font_counts.append(len(bb))
+        for char_id in char_ids:
+            char_counts[char_id] += 1
+        font_names.append(font_name)
     out.close()
 
     f = os.path.join(args.out, 'meta.json')
     out = open(f, 'w')
     x = {
         'fonts': font_names,
+        'font_counts': font_counts,
         'chars': want_chars,
+        'char_counts': char_counts,
         'font_size': args.font_size,
         'max_ascent': args.max_ascent,
         'max_descent': args.max_descent,
@@ -147,18 +162,6 @@ def main(args):
     } 
     s = json.dumps(x, sort_keys=True)
     out.write(s)
-
-    f = os.path.join(args.out, 'meta.bin')
-    out = open(f, 'wb')
-    a = struct.pack('iii', img_count, img_height, args.img_width)
-    b = struct.pack('iii', args.font_size, args.max_ascent, args.max_descent)
-    c = struct.pack('ii', len(want_chars), len(font_names))
-    d = np.array(want_chars, np.int32).tobytes()
-    out.write(a + b + c + d)
-    for font_name in font_names:
-        s = ' '.join(font_name) + '\n'
-        out.write(s.encode('utf-8'))
-    out.close()
 
 
 if __name__ == '__main__':
