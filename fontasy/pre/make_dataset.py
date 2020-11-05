@@ -17,6 +17,7 @@ def parse_args():
     x.add_argument('--max_ascent', type=int, required=True)
     x.add_argument('--max_descent', type=int, required=True)
     x.add_argument('--img_width', type=int, required=True)
+    x.add_argument('--min_font_ok_frac', type=float, required=True)
     x.add_argument('--out', type=str, required=True)
     return x.parse_args()
 
@@ -80,7 +81,10 @@ def sample_to_bytes(font_id, char_id, image):
 def main(args):
     os.makedirs(args.out)
 
+    assert 0 <= args.min_font_ok_frac <= 1
+
     want_chars = parse_char_ranges(args.chars)
+    num_want_chars = len(want_chars)
     want_chars_set = set(want_chars)
     c2id = {}
     for c in want_chars:
@@ -107,6 +111,7 @@ def main(args):
             continue
         have_chars_set = get_font_chars(f)
         cc = sorted(want_chars_set & have_chars_set)
+        bb = []
         for c in cc:
             char_id = c2id[c]
             text = chr(c)
@@ -120,8 +125,12 @@ def main(args):
             a = center_char_in_img(a, w)
             b = sample_to_bytes(font_id, char_id, a)
             assert len(b) == bytes_per_sample
+            bb.append(b)
+        have_frac = len(bb) / num_want_chars
+        if args.min_font_ok_frac <= have_frac:
+            b = b''.join(bb)
             out.write(b)
-            img_count += 1
+            img_count += len(bb)
     out.close()
 
     f = os.path.join(args.out, 'meta.json')

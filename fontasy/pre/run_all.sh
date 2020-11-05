@@ -24,6 +24,7 @@ IMG_HEIGHT=64
 MAX_ASCENT=46
 MAX_DESCENT=18
 IMG_WIDTH=48
+MIN_FONT_OK_FRAC=0.8
 
 rm -rf $PROC_ROOT
 mkdir -p $PROC_ROOT
@@ -172,6 +173,7 @@ $PY -m fontasy.pre.make_dataset \
     --max_ascent $MAX_ASCENT \
     --max_descent $MAX_DESCENT \
     --img_width $IMG_WIDTH \
+    --min_font_ok_frac $MIN_FONT_OK_FRAC \
     --out $PROC_ROOT/dataset/
 on_end "9. Make dataset (fonts x chars)"
 
