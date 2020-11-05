@@ -29,8 +29,8 @@ def parse_char_ranges(s):
             a, b = s.split('..')
             a = int(a)
             b = int(b)
-            assert a <= b
-            rr += list(range(a, b + 1))
+            assert a < b
+            rr += list(range(a, b))
         else:
             r = int(s)
             rr.append(r)

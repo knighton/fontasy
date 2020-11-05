@@ -8,7 +8,7 @@ def parse_args():
     x.add_argument('--in', type=str, required=True)
     x.add_argument('--out_by_char', type=str, required=True)
     x.add_argument('--out_by_freq', type=str, required=True)
-    x.add_argument('--out_ascii', type=str, required=True)
+    x.add_argument('--out_table', type=str, required=True)
     return x.parse_args()
 
 
@@ -54,7 +54,7 @@ def main(args):
             out.write(s)
     out.close()
 
-    out = open(args.out_ascii, 'w')
+    out = open(args.out_table, 'w')
     for row in range(256 // 8):
         ss = []
         for col in range(8):

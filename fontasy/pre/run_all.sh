@@ -23,7 +23,7 @@ FONT_SIZE=40
 IMG_HEIGHT=64
 MAX_ASCENT=46
 MAX_DESCENT=18
-IMG_WIDTH=32
+IMG_WIDTH=48
 
 rm -rf $PROC_ROOT
 mkdir -p $PROC_ROOT
@@ -129,7 +129,7 @@ $PY -m fontasy.pre.vis_char_freqs \
     --in $PROC_ROOT/chars.jsonl \
     --out_by_char $PROC_ROOT/char_freqs_by_char.jsonl \
     --out_by_freq $PROC_ROOT/char_freqs_by_freq.jsonl \
-    --out_ascii $PROC_ROOT/char_freqs_ascii.txt
+    --out_table $PROC_ROOT/char_freqs_table.txt
 on_end "6. Visualize characters per font (to decide characters to use)"
 
 # 7. Calculate heights.
@@ -174,3 +174,18 @@ $PY -m fontasy.pre.make_dataset \
     --img_width $IMG_WIDTH \
     --out $PROC_ROOT/dataset/
 on_end "9. Make dataset (fonts x chars)"
+
+# 9. Visualize dataset.
+#
+# Show important distribution information about the dataset created.
+
+on_begin
+$PY -m fontasy.pre.vis_dataset \
+    --in data/pre/dataset/ \
+    --out_font_freqs data/pre/dataset_font_freqs.png \
+    --out_char_freqs data/pre/dataset_char_freqs.png \
+    --out_char_table data/pre/dataset_char_table.txt \
+    --out_heatmap_txt data/pre/dataset_heatmap.txt \
+    --out_heatmap_img data/pre/dataset_heatmap.png \
+    --out_heatmap_img_log10 data/pre/dataset_heatmap_log10.png
+on_end "10. Analyze dataset distributions"
