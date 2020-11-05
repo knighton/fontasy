@@ -1,7 +1,9 @@
 from argparse import ArgumentParser
 import numpy as np
+from PIL import Image
 import torch
 from torch import nn
+import os
 from torch.optim import Adam
 from tqdm import tqdm
 
@@ -13,7 +15,7 @@ def parse_args():
     x = ArgumentParser()
     x.add_argument('--dataset', type=str, required=True)
     x.add_argument('--val_frac', type=float, default=0.2)
-    x.add_argument('--save', type=str, default='/dev/stdout')
+    x.add_argument('--out', type=str, default='data/out/')
     x.add_argument('--device', type=str, default='cpu')
     x.add_argument('--font_embed_dim', type=int, default=64)
     x.add_argument('--char_embed_dim', type=int, default=64)
@@ -27,11 +29,26 @@ def parse_args():
     return x.parse_args()
 
 
+def save_batch(out_root, epoch_id, true_images, pred_images):
+    x = torch.stack([true_images, pred_images])
+    x = x.squeeze(2)
+    nh, nw, h, w = x.shape
+    x = x.permute(0, 2, 1, 3)
+    x = x.reshape(nh * h, nw * w)
+    x = (255 * x).type(torch.uint8)
+    x = x.cpu().numpy()
+    im = Image.fromarray(x)
+    f = os.path.join(out_root, 'epoch_%06d.png' % epoch_id)
+    im.save(f)
+
+
 def get_loss(pred, true):
     return ((pred - true) ** 2).mean()
 
 
 def main(args):
+    os.makedirs(args.out)
+
     device = torch.device(args.device)
 
     dataset = Dataset.from_dir(args.dataset, args.val_frac)
@@ -68,6 +85,10 @@ def main(args):
                 features, true_images = get_batch(True, args.batch_size)
                 designs = designer(features)
                 pred_images = generator(designs)
+
+                if not round_id and not train_id:
+                    save_batch(args.out, epoch_id, true_images, pred_images)
+
                 loss = get_loss(pred_images, true_images)
                 loss.backward()
                 optimizer.step()
