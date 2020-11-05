@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.optim import Adam
 from tqdm import tqdm
 
@@ -25,6 +24,10 @@ def parse_args():
     x.add_argument('--vals_per_round', type=int, default=1)
     x.add_argument('--batch_size', type=int, default=64)
     return x.parse_args()
+
+
+def get_loss(pred, true):
+    return ((pred - true) ** 2).mean()
 
 
 def main(args):
@@ -60,7 +63,7 @@ def main(args):
                 optimizer.zero_grad()
                 features, true_images = get_batch(True, args.batch_size)
                 pred_images = generator(features)
-                loss = F.binary_cross_entropy(pred_images, true_images)
+                loss = get_loss(pred_images, true_images)
                 loss.backward()
                 optimizer.step()
                 t_losses.append(loss.item())
@@ -70,7 +73,7 @@ def main(args):
                 for val_id in range(args.vals_per_round):
                     features, true_images = get_batch(True, args.batch_size)
                     pred_images = generator(features)
-                    loss = F.binary_cross_entropy(pred_images, true_images)
+                    loss = get_loss(pred_images, true_images)
                     v_losses.append(loss.item())
 
         t_loss = np.mean(t_losses)
