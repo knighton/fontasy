@@ -46,6 +46,19 @@ class Upsample2d(nn.Module):
                              mode='bilinear', align_corners=True)
 
 
+class Designer(nn.Sequential):
+    def __init__(self, in_d, out_d):
+        d = max(in_d, out_d)
+        super().__init__(
+            nn.Linear(in_d, 2 * d),
+            nn.BatchNorm1d(2 * d),
+            LinearBlock(2 * d, 4 * d),
+            LinearBlock(4 * d, 4 * d),
+            LinearBlock(4 * d, 2 * d),
+            LinearBlock(2 * d, out_d),
+        )
+
+
 class Generator(nn.Sequential):
     def __init__(self, in_d, body_c):
         c = body_c
@@ -55,13 +68,18 @@ class Generator(nn.Sequential):
             LinearBlock(in_d * 4, c * 4 * 3),
             Reshape(c, 4, 3),  # 4x3.
             Conv2dBlock(c, c, 3, 1, 1),
+            Conv2dBlock(c, c, 3, 1, 1),
             Upsample2d(2),  # 8x6.
+            Conv2dBlock(c, c, 3, 1, 1),
             Conv2dBlock(c, c, 3, 1, 1),
             Upsample2d(2),  # 16x12.
             Conv2dBlock(c, c, 3, 1, 1),
+            Conv2dBlock(c, c, 3, 1, 1),
             Upsample2d(2),  # 32x24.
             Conv2dBlock(c, c, 3, 1, 1),
+            Conv2dBlock(c, c, 3, 1, 1),
             Upsample2d(2),  # 64x48.
+            Conv2dBlock(c, c, 3, 1, 1),
             Conv2dBlock(c, c, 3, 1, 1),
             nn.Conv2d(c, 1, 3, 1, 1),
             nn.Sigmoid(),
