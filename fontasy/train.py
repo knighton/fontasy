@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import torch
 from torch import nn
+from torch.nn import Parameter as P
 import os
 from torch.optim import Adam
 from tqdm import tqdm
@@ -16,16 +17,16 @@ def parse_args():
     x.add_argument('--dataset', type=str, required=True)
     x.add_argument('--val_frac', type=float, default=0.2)
     x.add_argument('--out', type=str, default='data/out/')
-    x.add_argument('--device', type=str, default='cpu')
-    x.add_argument('--font_embed_dim', type=int, default=64)
-    x.add_argument('--char_embed_dim', type=int, default=64)
+    x.add_argument('--device', type=str, default='cuda:0')
+    x.add_argument('--font_dim', type=int, default=64)
+    x.add_argument('--char_dim', type=int, default=64)
     x.add_argument('--design_dim', type=int, default=64)
-    x.add_argument('--gen_channels', type=int, default=8)
-    x.add_argument('--num_epochs', type=int, default=1000)
+    x.add_argument('--gen_channels', type=int, default=32)
+    x.add_argument('--num_epochs', type=int, default=10000)
     x.add_argument('--rounds_per_epoch', type=int, default=100)
     x.add_argument('--trains_per_round', type=int, default=10)
     x.add_argument('--vals_per_round', type=int, default=1)
-    x.add_argument('--batch_size', type=int, default=16)
+    x.add_argument('--batch_size', type=int, default=128)
     return x.parse_args()
 
 
@@ -53,11 +54,9 @@ def main(args):
 
     dataset = Dataset.from_dir(args.dataset, args.val_frac)
 
-    font_embeds = torch.randn(dataset.num_fonts, args.font_embed_dim,
-                              requires_grad=True).to(device)
-    char_embeds = torch.randn(dataset.num_chars, args.char_embed_dim,
-                              requires_grad=True).to(device)
-    designer_in_dim = args.font_embed_dim + args.char_embed_dim
+    font_embeds = P(torch.randn(dataset.num_fonts, args.font_dim).to(device))
+    char_embeds = P(torch.randn(dataset.num_chars, args.char_dim).to(device))
+    designer_in_dim = args.font_dim + args.char_dim
     designer = Designer(designer_in_dim, args.design_dim).to(device)
     generator = Generator(args.design_dim, args.gen_channels).to(device)
     params = [font_embeds, char_embeds] + list(designer.parameters()) + \
