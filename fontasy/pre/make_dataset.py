@@ -100,11 +100,12 @@ def main(args):
     f = os.path.join(args.out, 'all.bin')
     out = open(f, 'wb')
     bytes_per_sample = 4 + 4 + img_height * args.img_width
-    img_count = 0
-    font_counts = []
     char_counts = [0] * num_want_chars
+    font_counts = []
+    font_id = 0
     font_names = []
-    for font_id, line in enumerate(lines):
+    img_count = 0
+    for line in lines:
         x = json.loads(line)
         f = x['file']
         font_name = x['name']
@@ -114,8 +115,7 @@ def main(args):
 
         have_chars_set = get_font_chars(f)
         cc = sorted(want_chars_set & have_chars_set)
-        bb = []
-        char_ids = []
+        todos = []
         for c in cc:
             char_id = c2id[c]
             text = chr(c)
@@ -126,24 +126,23 @@ def main(args):
                 continue
 
             draw.text((0, 0), text, font=font, fill=(255,))
-            a = np.array(image)
-            a = center_char_in_img(a, w)
-            b = sample_to_bytes(font_id, char_id, a)
-            char_ids.append(char_id)
-            assert len(b) == bytes_per_sample
-            bb.append(b)
+            arr = np.array(image)
+            arr = center_char_in_img(arr, w)
+            todos.append((char_id, arr))
 
-        have_frac = len(bb) / num_want_chars
+        have_frac = len(todos) / num_want_chars
         if have_frac < args.min_font_ok_frac:
             continue
 
-        b = b''.join(bb)
-        out.write(b)
-        img_count += len(bb)
-        font_counts.append(len(bb))
-        for char_id in char_ids:
+        for char_id, arr in todos:
             char_counts[char_id] += 1
+            b = sample_to_bytes(font_id, char_id, arr)
+            assert len(b) == bytes_per_sample
+            out.write(b)
+        font_counts.append(len(todos))
+        font_id += 1
         font_names.append(font_name)
+        img_count += len(todos)
     out.close()
 
     f = os.path.join(args.out, 'meta.json')

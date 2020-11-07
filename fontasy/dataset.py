@@ -36,6 +36,12 @@ class Dataset(object):
         val = cls.load_split(dirname, 'val', img_shape)
         return cls(train, val)
 
+    @classmethod
+    def count_ids(cls, t_ids, v_ids):
+        num_ids = max(max(t_ids), max(v_ids)) + 1
+        assert list(range(num_ids)) == sorted(set(t_ids)) == sorted(set(v_ids))
+        return num_ids
+
     def __init__(self, train, val):
         self.train = t_imgs, t_font_ids, t_char_ids = train
         self.val = v_imgs, v_font_ids, v_char_ids = val
@@ -45,8 +51,8 @@ class Dataset(object):
         self.num_val_samples = v_imgs.shape[0]
         self.num_samples = self.num_train_samples + self.num_val_samples
 
-        self.num_fonts = max(max(t_font_ids), max(v_font_ids)) + 1
-        self.num_chars = max(max(t_char_ids), max(v_char_ids)) + 1
+        self.num_fonts = self.count_ids(t_font_ids, v_font_ids)
+        self.num_chars = self.count_ids(t_char_ids, v_char_ids)
 
     def get_batch(self, training, size, device):
         imgs, font_ids, char_ids = self.train if training else self.val
