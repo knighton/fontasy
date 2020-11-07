@@ -46,14 +46,13 @@ class Upsample2d(nn.Module):
                              mode='bilinear', align_corners=True)
 
 
-class Designer(nn.Sequential):
+class Planner(nn.Sequential):
     def __init__(self, in_d, out_d):
         d = max(in_d, out_d)
         super().__init__(
             nn.Linear(in_d, 2 * d),
             nn.BatchNorm1d(2 * d),
             LinearBlock(2 * d, 4 * d),
-            LinearBlock(4 * d, 4 * d),
             LinearBlock(4 * d, 2 * d),
             LinearBlock(2 * d, out_d),
         )

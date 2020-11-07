@@ -16,6 +16,9 @@ class Dataset(object):
         w = x['img_width']
         z = 4 + 4 + h * w
 
+        prob = val_frac, 1 - val_frac
+        splits = np.random.choice(2, n, p=prob)
+
         f = os.path.join(d, 'data.bin')
         x = np.fromfile(f, np.uint8)
         x8 = x.reshape(n, z)
@@ -24,29 +27,27 @@ class Dataset(object):
         font_ids = x32[:, 0]
         char_ids = x32[:, 1]
 
-        num_fonts = int(font_ids.max()) + 1
-        prob = val_frac, 1 - val_frac
-        font_splits = np.random.choice(2, num_fonts, p=prob)
+        return cls(splits, font_ids, char_ids, images)
 
-        return cls(font_ids, char_ids, images, font_splits)
-
-    def __init__(self, font_ids, char_ids, images, font_splits):
+    def __init__(self, splits, font_ids, char_ids, images):
+        self.sample_splits = splits
         self.sample_font_ids = font_ids
         self.sample_char_ids = char_ids
         self.sample_images = images
-        self.font_splits = font_splits
 
         self.num_fonts = int(font_ids.max()) + 1
         self.num_chars = int(char_ids.max()) + 1
 
-        train_sample_ids = []
-        val_sample_ids = []
-        for sample_id, font_id in enumerate(font_ids):
-            split = font_splits[font_id]
-            sample_ids = train_sample_ids if split else val_sample_ids
+        self.num_samples, self.img_channels, self.img_height, \
+            self.img_width = images.shape
+
+        tt = []
+        vv = []
+        for sample_id, training in enumerate(splits):
+            sample_ids = tt if training else vv
             sample_ids.append(sample_id)
-        self.train_sample_ids = np.array(train_sample_ids, np.int32)
-        self.val_sample_ids = np.array(val_sample_ids, np.int32)
+        self.train_sample_ids = np.array(tt, np.int32)
+        self.val_sample_ids = np.array(vv, np.int32)
 
     def get_batch(self, training, size, device):
         split_sample_ids = self.train_sample_ids if training else \
