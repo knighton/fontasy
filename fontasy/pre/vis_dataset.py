@@ -83,7 +83,7 @@ def main(args):
     chars = np.array(x['chars'])
     num_chars = len(chars)
 
-    f = os.path.join(d, 'data.bin')
+    f = os.path.join(d, 'all.bin')
     x = np.fromfile(f, np.uint8)
     z = 4 + 4 + h * w
     x8 = x.reshape(n, z)

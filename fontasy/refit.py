@@ -9,7 +9,6 @@ from .trainer import Trainer
 def parse_args():
     x = ArgumentParser()
     x.add_argument('--dataset', type=str, required=True)
-    x.add_argument('--val_frac', type=float, default=0.2)
     x.add_argument('--device', type=str, default='cuda:0')
     x.add_argument('--save', type=str, required=True)
     return x.parse_args()
@@ -17,7 +16,7 @@ def parse_args():
 
 def main(args):
     device = torch.device(args.device)
-    dataset = Dataset.from_dir(args.dataset, args.val_frac)
+    dataset = Dataset.from_dir(args.dataset)
     trainer = Trainer.from_dir(args.save, device, dataset.img_height,
                                dataset.img_width)
     trainer.fit(dataset, args.save)

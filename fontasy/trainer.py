@@ -114,7 +114,7 @@ class Trainer(object):
         return cls(args, models, results)
 
     def __init__(self, args, models, results=None):
-        results = results or [], [], [], []
+        results = results or ([], [], [], [])
 
         self.args = args
         self.models = models
@@ -255,10 +255,9 @@ class Trainer(object):
         self.train_losses.append(train_losses)
         self.val_losses.append(val_losses)
 
-        demo_targets, demo_preds = self.get_demo_images(
-            dataset, self.args.demo_size)
-        self.demo_targets.append(demo_targets)
-        self.demo_preds.append(demo_preds)
+        targets, preds = self.get_demo_images(dataset, self.args.demo_size)
+        self.demo_targets.append(targets)
+        self.demo_preds.append(preds)
 
         line = '%6d %6.4f %6.4f' % (epoch_id, train_losses.mean(),
                                     val_losses.mean())

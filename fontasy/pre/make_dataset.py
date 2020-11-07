@@ -97,7 +97,7 @@ def main(args):
     lines = open(in_f).readlines()
     lines = tqdm(lines, leave=False)
 
-    f = os.path.join(args.out, 'data.bin')
+    f = os.path.join(args.out, 'all.bin')
     out = open(f, 'wb')
     bytes_per_sample = 4 + 4 + img_height * args.img_width
     img_count = 0

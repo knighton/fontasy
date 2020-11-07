@@ -12,6 +12,7 @@
 # 8. Visualize heights.
 # 9. Make dataset.
 # 10. Visualize dataset.
+# 11. Split dataset.
 
 PY=python3
 TTF_ROOT=~/dataset/fonts/
@@ -26,6 +27,7 @@ MAX_ASCENT=46
 MAX_DESCENT=18
 IMG_WIDTH=48
 MIN_FONT_OK_FRAC=0.8
+VAL_FRAC=0.1
 
 rm -rf $PROC_ROOT
 mkdir -p $PROC_ROOT
@@ -145,7 +147,7 @@ $PY -m fontasy.pre.calc_heights \
     --in $PROC_ROOT/fonts.jsonl \
     --min_font_size $MIN_FONT_SIZE \
     --max_font_size $MAX_FONT_SIZE \
-    --out $PROC_ROOT/heights.npy
+    --out $PROC_ROOT/heights.i16
 on_end "7. Get heights for every font size"
 
 # 8. Visualize heights.
@@ -154,7 +156,7 @@ on_end "7. Get heights for every font size"
 
 on_begin
 $PY -m fontasy.pre.vis_heights \
-    --in $PROC_ROOT/heights.npy \
+    --in $PROC_ROOT/heights.i16 \
     --min_font_size $MIN_FONT_SIZE \
     --max_font_size $MAX_FONT_SIZE \
     --img_height $IMG_HEIGHT \
@@ -178,17 +180,27 @@ $PY -m fontasy.pre.make_dataset \
     --out $PROC_ROOT/dataset/
 on_end "9. Make dataset (fonts x chars)"
 
-# 9. Visualize dataset.
+# 10. Visualize dataset.
 #
 # Show important distribution information about the dataset created.
 
 on_begin
 $PY -m fontasy.pre.vis_dataset \
-    --in data/pre/dataset/ \
-    --out_font_freqs data/pre/dataset_font_freqs.png \
-    --out_char_freqs data/pre/dataset_char_freqs.png \
-    --out_char_table data/pre/dataset_char_table.txt \
-    --out_heatmap_txt data/pre/dataset_heatmap.txt \
-    --out_heatmap_img data/pre/dataset_heatmap.png \
-    --out_heatmap_img_log10 data/pre/dataset_heatmap_log10.png
+    --in $PROC_ROOT/dataset/ \
+    --out_font_freqs $PROC_ROOT/dataset_font_freqs.png \
+    --out_char_freqs $PROC_ROOT/dataset_char_freqs.png \
+    --out_char_table $PROC_ROOT/dataset_char_table.txt \
+    --out_heatmap_txt $PROC_ROOT/dataset_heatmap.txt \
+    --out_heatmap_img $PROC_ROOT/dataset_heatmap.png \
+    --out_heatmap_img_log10 $PROC_ROOT/dataset_heatmap_log10.png
 on_end "10. Analyze dataset distributions"
+
+# 11. Split dataset.
+#
+# Divide samples into training and validation splits.
+
+on_begin
+$PY -m fontasy.pre.split_dataset \
+    --dataset $PROC_ROOT/dataset/ \
+    --val_frac $VAL_FRAC
+on_end "11. Create dataset splits"

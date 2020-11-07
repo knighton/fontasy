@@ -9,7 +9,6 @@ from .trainer import Trainer
 def parse_args():
     x = ArgumentParser()
     x.add_argument('--dataset', type=str, required=True)
-    x.add_argument('--val_frac', type=float, default=0.2)
     x.add_argument('--device', type=str, default='cuda:0')
     x.add_argument('--font_vec_dim', type=int, default=64)
     x.add_argument('--char_vec_dim', type=int, default=64)
@@ -28,7 +27,7 @@ def parse_args():
 def main(args):
     assert not os.path.exists(args.save)
     device = torch.device(args.device)
-    dataset = Dataset.from_dir(args.dataset, args.val_frac)
+    dataset = Dataset.from_dir(args.dataset)
     trainer = Trainer.from_args(args, dataset.num_fonts, dataset.num_chars, device)
     trainer.fit(dataset, args.save)
 

@@ -1,3 +1,4 @@
+from collections import Counter
 import json
 import numpy as np
 import os
@@ -6,58 +7,51 @@ import torch
 
 class Dataset(object):
     @classmethod
-    def from_dir(cls, d, val_frac):
-        assert 0 < val_frac < 1
-
-        f = os.path.join(d, 'meta.json')
+    def load_img_shape(cls, dirname):
+        f = os.path.join(dirname, 'meta.json')
         x = json.load(open(f))
-        n = x['img_count']
+        c = 1
         h = x['img_height']
         w = x['img_width']
-        z = 4 + 4 + h * w
+        return c, h, w
 
-        prob = val_frac, 1 - val_frac
-        splits = np.random.choice(2, n, p=prob)
-
-        f = os.path.join(d, 'data.bin')
+    @classmethod
+    def load_split(cls, dirname, split, img_shape):
+        f = os.path.join(dirname, '%s.bin' % split)
         x = np.fromfile(f, np.uint8)
-        x8 = x.reshape(n, z)
-        images = x8[:, 8:].reshape(n, 1, h, w)
+        c, h, w = img_shape
+        z = 4 + 4 + c * h * w
+        shape = (-1,) + img_shape
+        imgs = x.reshape(-1, z)[:, 8:].reshape(shape)
+        n = len(imgs)
         x32 = x.view(np.int32).reshape(n, -1)
         font_ids = x32[:, 0]
         char_ids = x32[:, 1]
+        return imgs, font_ids, char_ids
 
-        return cls(splits, font_ids, char_ids, images)
+    @classmethod
+    def from_dir(cls, dirname):
+        img_shape = cls.load_img_shape(dirname)
+        train = cls.load_split(dirname, 'train', img_shape)
+        val = cls.load_split(dirname, 'val', img_shape)
+        return cls(train, val)
 
-    def __init__(self, splits, font_ids, char_ids, images):
-        self.sample_splits = splits
-        self.sample_font_ids = font_ids
-        self.sample_char_ids = char_ids
-        self.sample_images = images
+    def __init__(self, train, val):
+        self.train = t_imgs, t_font_ids, t_char_ids = train
+        self.val = v_imgs, v_font_ids, v_char_ids = val
 
-        self.num_fonts = int(font_ids.max()) + 1
-        self.num_chars = int(char_ids.max()) + 1
+        self.num_train_samples, self.img_channels, self.img_height, \
+            self.img_width = t_imgs.shape
+        self.num_val_samples = v_imgs.shape[0]
+        self.num_samples = self.num_train_samples + self.num_val_samples
 
-        self.num_samples, self.img_channels, self.img_height, \
-            self.img_width = images.shape
-
-        tt = []
-        vv = []
-        for sample_id, training in enumerate(splits):
-            sample_ids = tt if training else vv
-            sample_ids.append(sample_id)
-        self.train_sample_ids = np.array(tt, np.int32)
-        self.val_sample_ids = np.array(vv, np.int32)
+        self.num_fonts = max(max(t_font_ids), max(v_font_ids)) + 1
+        self.num_chars = max(max(t_char_ids), max(v_char_ids)) + 1
 
     def get_batch(self, training, size, device):
-        split_sample_ids = self.train_sample_ids if training else \
-                           self.val_sample_ids
-        sample_ids = np.random.choice(split_sample_ids, size)
-        images = self.sample_images[sample_ids]
-        images = torch.tensor(images, dtype=torch.float32, device=device)
-        images = images / 255
-        font_ids = self.sample_font_ids[sample_ids]
-        font_ids = torch.tensor(font_ids, dtype=torch.int64, device=device)
-        char_ids = self.sample_char_ids[sample_ids]
-        char_ids = torch.tensor(char_ids, dtype=torch.int64, device=device)
-        return images, font_ids, char_ids
+        imgs, font_ids, char_ids = self.train if training else self.val
+        i = np.random.choice(imgs.shape[0], size)
+        imgs = torch.tensor(imgs[i], dtype=torch.float32, device=device) / 255
+        font_ids = torch.tensor(font_ids[i], dtype=torch.int64, device=device)
+        char_ids = torch.tensor(char_ids[i], dtype=torch.int64, device=device)
+        return imgs, font_ids, char_ids
