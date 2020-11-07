@@ -166,7 +166,7 @@ class Trainer(object):
         preds = np.stack(self.demo_preds)
         x = np.stack([targets, preds])
         s, e, n, c, h, w = x.shape
-        x = x.transpose(0, 1, 4, 2, 5, 3)
+        x = x.transpose(1, 0, 4, 2, 5, 3)
         x = x.reshape(s * e * h, n * w, c)
         assert x.shape[2] == 1
         x = x[:, :, 0]
